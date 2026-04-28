@@ -1,7 +1,7 @@
 import logging
-from api import fetch_data
-from transform import transform_data
-from storage import save_to_file
+from src.api import fetch_data
+from src.transform import transform_data
+from src.storage import save_to_file
 
 # Configure logging
 logging.basicConfig(

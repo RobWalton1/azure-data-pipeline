@@ -23,5 +23,3 @@ def fetch_data():
     except Exception as e:
         logging.error(f"API request failed: {e}")
         raise
-
-print("fetch_data exists:", callable(fetch_data))
