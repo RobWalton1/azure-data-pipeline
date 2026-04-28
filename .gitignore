@@ -1,0 +1,13 @@
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Output files
+output.json
+
+# Virtual environments (if you add later)
+venv/
+.env
