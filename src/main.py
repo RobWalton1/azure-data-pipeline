@@ -1,7 +1,7 @@
 import logging
 from src.api import fetch_data
 from src.transform import transform_data
-from src.storage import save_to_file
+from src.storage import save_to_blob
 
 # Configure logging
 logging.basicConfig(
@@ -15,7 +15,7 @@ def main():
     try:
         raw_data = fetch_data()
         transformed_data = transform_data(raw_data)
-        save_to_file(transformed_data)
+        save_to_blob(transformed_data)
 
         logging.info("Pipeline completed successfully")
 
