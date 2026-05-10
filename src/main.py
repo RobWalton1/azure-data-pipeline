@@ -17,7 +17,7 @@ def main():
         transformed_data = transform_data(raw_data)
         save_to_blob(transformed_data)
 
-        logging.info("Pipeline completed successfully")
+        logging.info("Pipeline completed successfully, CI/CD is implemented")
 
     except Exception as e:
         logging.error(f"Pipeline failed: {e}")
