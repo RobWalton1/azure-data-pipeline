@@ -38,3 +38,15 @@ jobs:
         run: |
           docker push $REGISTRY/$IMAGE_NAME:${IMAGE_TAG}
           docker push $REGISTRY/$IMAGE_NAME:latest
+
+            - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Container App Job
+        run: |
+          az containerapp job update \
+            --name data-pipeline-job \
+            --resource-group data-pipeline-rg \
+            --image datapipelinerob123.azurecr.io/data-pipeline:${IMAGE_TAG}
