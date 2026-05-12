@@ -39,7 +39,7 @@ jobs:
           docker push $REGISTRY/$IMAGE_NAME:${IMAGE_TAG}
           docker push $REGISTRY/$IMAGE_NAME:latest
 
-            - name: Azure Login
+      - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
