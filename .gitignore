@@ -1,13 +1,17 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
 # Environment variables
 .env
 
-# Python cache
+# Python
 __pycache__/
 *.pyc
-
-# Output files
-output.json
-
-# Virtual environments (if you add later)
-venv/
-.env
