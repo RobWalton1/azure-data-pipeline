@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      REGISTRY: datapipelinerob123.azurecr.io
+      REGISTRY: datapipelinerobtfacr.azurecr.io
       IMAGE_NAME: data-pipeline
 
     steps:
