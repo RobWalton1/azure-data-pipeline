@@ -47,6 +47,6 @@ jobs:
       - name: Update Container App Job
         run: |
           az containerapp job update \
-            --name data-pipeline-job-tf
-            --resource-group data-pipeline-rg \
-            --image datapipelinerob123.azurecr.io/data-pipeline:${IMAGE_TAG}
+            --name data-pipeline-job-tf \
+            --resource-group data-pipeline-rg-tf \
+            --image datapipelinerobtfacr.azurecr.io/data-pipeline:${IMAGE_TAG}
