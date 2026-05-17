@@ -11,6 +11,7 @@ logging.basicConfig(
 
 def main():
     logging.info("Pipeline started")
+    logging.info("CI/CD is implemented, starting the pipeline execution")
 
     try:
         raw_data = fetch_data()
