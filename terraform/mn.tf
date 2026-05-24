@@ -15,24 +15,19 @@ provider "azurerm" {
   resource_provider_registrations = "none"
 }
 
+module "storage" {
+  source = "./modules/storage"
+
+  storage_account_name = var.storage_account_name
+  resource_group_name  = azurerm_resource_group.pipeline_rg.name
+  location             = azurerm_resource_group.pipeline_rg.location
+}
+
 resource "azurerm_resource_group" "pipeline_rg" {
   name     = var.resource_group_name
   location = var.location
 }
 
-resource "azurerm_storage_account" "pipeline_storage" {
-  name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.pipeline_rg.name
-  location                 = azurerm_resource_group.pipeline_rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
-
-resource "azurerm_storage_container" "pipeline_container" {
-  name                  = "pipeline-output"
-  storage_account_id    = azurerm_storage_account.pipeline_storage.id
-  container_access_type = "private"
-}
 
 resource "azurerm_container_registry" "pipeline_acr" {
   name                = var.acr_name
