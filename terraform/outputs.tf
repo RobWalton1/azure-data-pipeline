@@ -7,7 +7,7 @@ output "storage_account_name" {
 }
 
 output "acr_login_server" {
-  value = azurerm_container_registry.pipeline_acr.login_server
+  value = module.acr.login_server
 }
 
 output "container_job_name" {

@@ -28,13 +28,12 @@ resource "azurerm_resource_group" "pipeline_rg" {
   location = var.location
 }
 
+module "acr" {
+  source = "./modules/acr"
 
-resource "azurerm_container_registry" "pipeline_acr" {
-  name                = var.acr_name
+  acr_name           = var.acr_name
   resource_group_name = azurerm_resource_group.pipeline_rg.name
   location            = azurerm_resource_group.pipeline_rg.location
-  sku                 = "Basic"
-  admin_enabled       = true
 }
 
 resource "azurerm_container_app_environment" "pipeline_env" {
@@ -58,20 +57,20 @@ resource "azurerm_container_app_job" "pipeline_job" {
   }
 
   registry {
-    server               = azurerm_container_registry.pipeline_acr.login_server
-    username             = azurerm_container_registry.pipeline_acr.admin_username
+    server               = module.acr.login_server
+    username             = module.acr.admin_username
     password_secret_name = "acr-password"
   }
 
   secret {
     name  = "acr-password"
-    value = azurerm_container_registry.pipeline_acr.admin_password
+    value = module.acr.admin_password
   }
 
   template {
     container {
       name   = "data-pipeline"
-      image  = "${azurerm_container_registry.pipeline_acr.login_server}/data-pipeline:latest"
+      image  = "${module.acr.login_server}/data-pipeline:latest"
       cpu    = 0.5
       memory = "1Gi"
     }
