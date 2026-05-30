@@ -36,49 +36,24 @@ module "acr" {
   location            = azurerm_resource_group.pipeline_rg.location
 }
 
-resource "azurerm_container_app_environment" "pipeline_env" {
-  name                = var.container_env_name
-  location            = azurerm_resource_group.pipeline_rg.location
+module "container_env" {
+  source = "./modules/container_env"
+
+  container_env_name = var.container_env_name
   resource_group_name = azurerm_resource_group.pipeline_rg.name
+  location = azurerm_resource_group.pipeline_rg.location
 }
 
-resource "azurerm_container_app_job" "pipeline_job" {
-  name                         = var.container_job_name
-  location                     = azurerm_resource_group.pipeline_rg.location
-  resource_group_name          = azurerm_resource_group.pipeline_rg.name
-  container_app_environment_id = azurerm_container_app_environment.pipeline_env.id
+module "container_job" {
+  source = "./modules/container_job"
 
-  replica_timeout_in_seconds = 300
-  replica_retry_limit        = 1
+  container_job_name      = var.container_job_name
+  resource_group_name     = azurerm_resource_group.pipeline_rg.name
+  location                = azurerm_resource_group.pipeline_rg.location
 
-  manual_trigger_config {
-    parallelism              = 1
-    replica_completion_count = 1
-  }
+  container_environment_id = module.container_env.id
 
-  registry {
-    server               = module.acr.login_server
-    username             = module.acr.admin_username
-    password_secret_name = "acr-password"
-  }
-
-  secret {
-    name  = "acr-password"
-    value = module.acr.admin_password
-  }
-
-  template {
-    container {
-      name   = "data-pipeline"
-      image  = "${module.acr.login_server}/data-pipeline:latest"
-      cpu    = 0.5
-      memory = "1Gi"
-    }
-  }
-
-  lifecycle {
-  ignore_changes = [
-    template[0].container[0].image
-  ]
-}
+  acr_login_server   = module.acr.login_server
+  acr_admin_username = module.acr.admin_username
+  acr_admin_password = module.acr.admin_password
 }

@@ -11,5 +11,5 @@ output "acr_login_server" {
 }
 
 output "container_job_name" {
-  value = azurerm_container_app_job.pipeline_job.name
+  value = module.container_job.name
 }
