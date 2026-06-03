@@ -21,3 +21,7 @@ variable "container_env_name" {
 variable "container_job_name" {
   type = string
 }
+
+variable "log_analytics_name" {
+  type = string
+}

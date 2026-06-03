@@ -57,3 +57,11 @@ module "container_job" {
   acr_admin_username = module.acr.admin_username
   acr_admin_password = module.acr.admin_password
 }
+
+module "log_analytics" {
+  source = "./modules/log_analytics"
+
+  workspace_name     = var.log_analytics_name
+  resource_group_name = azurerm_resource_group.pipeline_rg.name
+  location            = azurerm_resource_group.pipeline_rg.location
+}
