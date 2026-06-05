@@ -23,14 +23,34 @@ resource "azurerm_container_app_job" "pipeline_job" {
     value = var.acr_admin_password
   }
 
-  template {
-    container {
-      name   = "data-pipeline"
-      image  = "${var.acr_login_server}/data-pipeline:latest"
-      cpu    = 0.5
-      memory = "1Gi"
+  secret {
+  name  = "storage-connection-string"
+  value = var.storage_connection_string
+}
+
+template {
+  container {
+    name   = "data-pipeline"
+    image  = "${var.acr_login_server}/data-pipeline:latest"
+    cpu    = 0.5
+    memory = "1Gi"
+
+    env {
+      name  = "API_URL"
+      value = var.api_url
+    }
+
+    env {
+      name  = "BLOB_CONTAINER_NAME"
+      value = var.blob_container_name
+    }
+
+    env {
+      name        = "AZURE_STORAGE_CONNECTION_STRING"
+      secret_name = "storage-connection-string"
     }
   }
+}
 
   lifecycle {
     ignore_changes = [

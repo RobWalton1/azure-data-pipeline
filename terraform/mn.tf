@@ -39,9 +39,12 @@ module "acr" {
 module "container_env" {
   source = "./modules/container_env"
 
-  container_env_name = var.container_env_name
+  container_env_name  = var.container_env_name
   resource_group_name = azurerm_resource_group.pipeline_rg.name
-  location = azurerm_resource_group.pipeline_rg.location
+  location            = azurerm_resource_group.pipeline_rg.location
+
+  log_analytics_workspace_id = module.log_analytics.id
+  log_analytics_shared_key   = module.log_analytics.primary_shared_key
 }
 
 module "container_job" {
@@ -56,6 +59,9 @@ module "container_job" {
   acr_login_server   = module.acr.login_server
   acr_admin_username = module.acr.admin_username
   acr_admin_password = module.acr.admin_password
+  api_url                   = var.api_url
+  blob_container_name       = var.blob_container_name
+  storage_connection_string = var.storage_connection_string
 }
 
 module "log_analytics" {

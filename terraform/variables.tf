@@ -25,3 +25,16 @@ variable "container_job_name" {
 variable "log_analytics_name" {
   type = string
 }
+
+variable "api_url" {
+  type = string
+}
+
+variable "blob_container_name" {
+  type = string
+}
+
+variable "storage_connection_string" {
+  type      = string
+  sensitive = true
+}

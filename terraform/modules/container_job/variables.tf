@@ -26,3 +26,16 @@ variable "acr_admin_password" {
   type      = string
   sensitive = true
 }
+
+variable "api_url" {
+  type = string
+}
+
+variable "blob_container_name" {
+  type = string
+}
+
+variable "storage_connection_string" {
+  type      = string
+  sensitive = true
+}
