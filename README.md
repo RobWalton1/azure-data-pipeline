@@ -1,175 +1,192 @@
-# 🚀 Azure Cloud Data Pipeline (Phase 1)
+# Azure Data Pipeline
 
-## 📌 Overview
+A containerised Python data pipeline that retrieves the current Bitcoin price in GBP from the CoinGecko API and stores a timestamped result in Azure Blob Storage. The repository also contains Terraform infrastructure for Azure and a GitHub Actions workflow that builds, publishes, and deploys the container image.
 
-This project is a modular Python-based data pipeline that ingests data from a public API, processes it, and stores the result locally.
+## What it does
 
-It is designed as the foundation for a cloud-native pipeline that will later be deployed to Microsoft Azure using containerisation, CI/CD, secure secrets management, and monitoring.
+Each execution performs the following work:
 
----
+1. Reads the API endpoint from `API_URL`.
+2. Retrieves the CoinGecko response.
+3. Extracts the Bitcoin price in GBP and adds a UTC timestamp.
+4. Serialises the result as JSON.
+5. Uploads it to `output.json` in the configured Azure Blob Storage container.
 
-## 🎯 Project Goals
-
-* Build a structured data pipeline using Python
-* Follow clean architecture principles
-* Prepare for containerisation (Docker)
-* Lay the groundwork for Azure deployment
-
----
-
-## 🧱 Architecture
-
-The pipeline follows a clear separation of concerns:
-
-```
-src/
- ├── main.py        # Orchestrates pipeline execution
- ├── api.py         # Fetches data from external API
- ├── transform.py   # Transforms raw data into structured format
- └── storage.py     # Saves processed data
-```
-
----
-
-## 🔄 Data Flow
-
-1. Fetch data from external API (CoinGecko)
-2. Transform raw JSON into structured format
-3. Save output to a local file (`output.json`)
-4. Log execution steps and errors
-
----
-
-## ⚙️ How It Works
-
-### 1. Data Ingestion (`api.py`)
-
-* Calls the external API
-* Handles request errors
-* Returns raw JSON data
-
-### 2. Transformation (`transform.py`)
-
-* Extracts relevant fields (price, timestamp)
-* Structures data into a consistent schema
-
-### 3. Storage (`storage.py`)
-
-* Saves processed data to `output.json`
-* Includes logging and error handling
-
-### 4. Orchestration (`main.py`)
-
-* Coordinates the full pipeline
-* Handles logging and failure states
-
----
-
-## 📄 Example Output
+Example blob content:
 
 ```json
 {
   "asset": "bitcoin",
   "price_gbp": 52000,
-  "timestamp": "2026-04-28T23:02:10"
+  "timestamp": "2026-09-20T12:34:56.789012"
 }
 ```
 
----
+## Architecture
 
-## 🛠️ Setup & Installation
+```text
+CoinGecko API
+     |
+     v
+Python pipeline (src/)
+  api.py -> transform.py -> storage.py
+     |
+     v
+Azure Blob Storage (output.json)
 
-### 1. Clone the repository
+Docker image -> Azure Container Registry -> Azure Container Apps Job
+                                      |
+                                      v
+                            Azure Log Analytics
+```
+
+The Python application is organised by responsibility:
+
+| Path | Purpose |
+| --- | --- |
+| `src/main.py` | Runs the pipeline and configures logging. |
+| `src/api.py` | Retrieves JSON data from the configured API. |
+| `src/transform.py` | Converts the API response into the output schema. |
+| `src/storage.py` | Uploads the transformed JSON to Azure Blob Storage. |
+| `terraform/` | Defines Azure infrastructure as reusable Terraform modules. |
+| `.github/workflows/deploy.yml` | Builds and publishes the image, then updates the Container Apps Job. |
+
+## Prerequisites
+
+For local execution, install:
+
+- Python 3.12 or later
+- An Azure Storage account and Blob container
+
+For container and infrastructure deployment, also install:
+
+- Docker
+- Azure CLI authenticated to the target Azure subscription
+- Terraform compatible with the AzureRM provider `~> 4.0`
+
+## Local setup and execution
+
+Clone the repository and create a virtual environment:
 
 ```bash
-git clone <your-repo-url>
+git clone <repository-url>
 cd azure-data-pipeline
-```
-
-### 2. Create and activate environment (Anaconda)
-
-```bash
-conda create -n azure python=3.12
-conda activate azure
-```
-
-### 3. Install dependencies
-
-```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
----
+Create a `.env` file in the repository root. It is ignored by Git and must not be committed.
 
-## 🔐 Environment Variables
-
-Create a `.env` file in the root directory:
-
-```
+```dotenv
 API_URL=https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp
+AZURE_STORAGE_CONNECTION_STRING=<storage-account-connection-string>
+BLOB_CONTAINER_NAME=pipeline-output
 ```
 
----
+The configured container must already exist. The Terraform configuration creates `pipeline-output` by default.
 
-## ▶️ Running the Pipeline
-
-Run the project using:
+Run the pipeline:
 
 ```bash
 python -m src.main
 ```
 
----
+Successful execution logs the upload and overwrites `output.json` in the specified blob container.
 
-## 📊 Logging
+## Run with Docker
 
-The pipeline includes structured logging to track:
+Build the image:
 
-* Execution start and completion
-* API requests
-* File storage operations
-* Errors and failures
+```bash
+docker build -t azure-data-pipeline .
+```
 
----
+Run it using the same environment variables:
 
-## 🧠 Key Concepts Demonstrated
+```bash
+docker run --rm --env-file .env azure-data-pipeline
+```
 
-* Modular Python architecture
-* Separation of concerns
-* API integration
-* Data transformation
-* Error handling and logging
-* Environment variable management
+## Provision Azure infrastructure
 
----
+Terraform creates the following resources:
 
-## 🚀 Future Enhancements (Next Phases)
+- Resource group
+- Storage account and private `pipeline-output` Blob container
+- Azure Container Registry (ACR)
+- Log Analytics workspace
+- Azure Container Apps environment
+- Manually triggered Azure Container Apps Job
 
-* 🐳 Docker containerisation
-* ☁️ Deployment to Microsoft Azure
-* 📦 Azure Blob Storage integration
-* 🔐 Azure Key Vault for secrets
-* 🔁 CI/CD with GitHub Actions
-* 📊 Monitoring with Azure Monitor
+The remote Terraform state backend is configured in `terraform/backend.tf`. Ensure the backend resource group, storage account, and `tfstate` container already exist and that your Azure identity can access them.
 
----
+Create a local `terraform.tfvars` file inside `terraform/`; it is ignored by Git because it includes secrets.
 
-## 🧾 CV Description
+```hcl
+resource_group_name        = "data-pipeline-rg"
+location                   = "uksouth"
+storage_account_name       = "<globally-unique-storage-account-name>"
+acr_name                   = "<globally-unique-acr-name>"
+container_env_name         = "data-pipeline-env"
+container_job_name         = "data-pipeline-job"
+log_analytics_name         = "data-pipeline-logs"
+api_url                    = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp"
+blob_container_name        = "pipeline-output"
+storage_connection_string  = "<storage-account-connection-string>"
+```
 
-Designed and implemented a modular data pipeline in Python that ingests, processes, and stores external API data, forming the foundation for a cloud-native solution using Docker, Azure, CI/CD, and secure secret management.
+Then initialise and apply the configuration:
 
----
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
 
-## ⚠️ Notes
+Terraform sets the Container Apps Job image to `data-pipeline:latest` in the ACR. Push an image with that tag, or use the GitHub Actions workflow described below, before running the job.
 
-* This is Phase 1 of a larger cloud project
-* Focus is on structure and scalability rather than complexity
-* Designed to evolve into a production-ready system
+## CI/CD
 
----
+On every push to `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) does the following:
 
-## 👤 Author
+1. Builds the Docker image.
+2. Tags it with the short commit SHA and `latest`.
+3. Pushes both tags to Azure Container Registry.
+4. Authenticates to Azure.
+5. Updates the Azure Container Apps Job to use the commit-SHA image.
 
-Rob
+Configure these repository secrets before enabling the workflow:
 
----
+| Secret | Description |
+| --- | --- |
+| `AZURE_REGISTRY_LOGIN_SERVER` | ACR login server, for example `example.azurecr.io`. |
+| `AZURE_REGISTRY_USERNAME` | ACR admin username. |
+| `AZURE_REGISTRY_PASSWORD` | ACR admin password. |
+| `AZURE_CREDENTIALS` | Azure service-principal credentials accepted by `azure/login`. |
+
+The workflow currently names the target registry, job, and resource group directly. If you use different Azure resource names, update the `REGISTRY` value and the `az containerapp job update` command in the workflow.
+
+## Configuration reference
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `API_URL` | Yes | Endpoint returning CoinGecko-style JSON with `bitcoin.gbp`. |
+| `AZURE_STORAGE_CONNECTION_STRING` | Yes | Connection string for the destination storage account. |
+| `BLOB_CONTAINER_NAME` | Yes | Destination Blob container name. |
+
+## Operational notes
+
+- The pipeline writes to a fixed blob name, `output.json`; each run replaces the previous output.
+- Timestamps are generated in UTC.
+- The Container Apps Job uses a manual trigger configuration with one replica and a 300-second timeout.
+- Application logs are written to standard output and are available through the Container Apps environment's Log Analytics workspace when run in Azure.
+
+## Security
+
+Keep `.env` and `terraform.tfvars` local. They can contain storage connection strings and other credentials. For production use, prefer managed identities and a secrets-management service over distributing connection strings.
+
+## License
+
+No license is currently specified for this repository.
