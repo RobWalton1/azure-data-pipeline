@@ -8,6 +8,8 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 .terraform.lock.hcl
+*.tfvars
+*.tfvars.json
 
 # Environment variables
 .env
