@@ -1,6 +1,29 @@
-# Azure Data Pipeline
+# Azure Cloud Data Pipeline
 
-A containerised Python data pipeline that retrieves the current Bitcoin price in GBP from the CoinGecko API and stores a timestamped result in Azure Blob Storage. The repository also contains Terraform infrastructure for Azure and a GitHub Actions workflow that builds, publishes, and deploys the container image.
+I designed and built this production-style cloud data pipeline to demonstrate modern cloud, DevOps, and infrastructure engineering practices using Microsoft Azure.
+
+The Python application retrieves data from a public REST API, transforms it, and stores the resulting output in Azure Blob Storage. It is packaged as a Docker container, published to Azure Container Registry (ACR), and executed by an Azure Container Apps Job.
+
+All Azure infrastructure is provisioned with Terraform. The configuration is organised into reusable modules for storage, ACR, the Container Apps environment, Container Apps Job, and Log Analytics; Terraform state is held remotely in Azure Storage for reliable infrastructure management.
+
+GitHub Actions automates delivery: a push to `main` builds the image, pushes it to ACR with a commit-SHA version tag, and updates the Container Apps Job to run that version. Azure Log Analytics provides centralised execution logs, with KQL available for querying logs and troubleshooting deployments.
+
+## Key technologies
+
+Python · Docker · Microsoft Azure · Terraform · GitHub Actions · Azure Container Registry · Azure Container Apps · Azure Blob Storage · Azure Log Analytics · KQL · Git · Linux
+
+## Engineering practices demonstrated
+
+- Infrastructure as Code using modular Terraform
+- Remote Terraform state management
+- Containerisation with Docker
+- Automated CI/CD with GitHub Actions
+- Versioned container deployments using Git commit SHA tags
+- Cloud secrets and environment configuration
+- Centralised logging and monitoring
+- KQL-based troubleshooting
+- Azure CLI and infrastructure troubleshooting
+- Separation of application and infrastructure concerns
 
 ## What it does
 
@@ -25,19 +48,18 @@ Example blob content:
 ## Architecture
 
 ```text
-CoinGecko API
-     |
-     v
-Python pipeline (src/)
-  api.py -> transform.py -> storage.py
-     |
-     v
-Azure Blob Storage (output.json)
+Public REST API
+       |
+       v
+Python pipeline (retrieve and transform)
+       |
+       v
+Docker image --> Azure Container Registry --> Azure Container Apps Job --> Azure Blob Storage
+                                                   |
+                                                   v
+                                      Azure Log Analytics / KQL
 
-Docker image -> Azure Container Registry -> Azure Container Apps Job
-                                      |
-                                      v
-                            Azure Log Analytics
+GitHub --> GitHub Actions --> Docker build --> ACR --> Container Apps Job update
 ```
 
 The Python application is organised by responsibility:
