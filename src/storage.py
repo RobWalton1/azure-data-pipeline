@@ -2,6 +2,7 @@ import json
 import logging
 import os
 
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Environment variables
-CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+ACCOUNT_URL = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
 CONTAINER_NAME = os.getenv("BLOB_CONTAINER_NAME")
 
 
@@ -17,12 +18,13 @@ def save_to_blob(data, blob_name="output.json"):
     try:
         logging.info("Uploading data to Azure Blob Storage...")
 
-        if not CONNECTION_STRING:
-            raise ValueError("Azure storage connection string is missing")
+        if not ACCOUNT_URL:
+            raise ValueError("Azure storage account URL is missing")
 
-        # Create blob service client
-        blob_service_client = BlobServiceClient.from_connection_string(
-            CONNECTION_STRING
+        # Managed identity in Azure; falls back to `az login` locally.
+        blob_service_client = BlobServiceClient(
+            account_url=ACCOUNT_URL,
+            credential=DefaultAzureCredential()
         )
 
         # Get blob client

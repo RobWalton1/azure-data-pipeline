@@ -18,13 +18,12 @@ variable "acr_login_server" {
   type = string
 }
 
-variable "acr_admin_username" {
+variable "identity_id" {
   type = string
 }
 
-variable "acr_admin_password" {
-  type      = string
-  sensitive = true
+variable "identity_client_id" {
+  type = string
 }
 
 variable "api_url" {
@@ -35,7 +34,6 @@ variable "blob_container_name" {
   type = string
 }
 
-variable "storage_connection_string" {
-  type      = string
-  sensitive = true
+variable "storage_account_url" {
+  type = string
 }

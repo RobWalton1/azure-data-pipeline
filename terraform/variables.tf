@@ -34,7 +34,11 @@ variable "blob_container_name" {
   type = string
 }
 
-variable "storage_connection_string" {
-  type      = string
-  sensitive = true
+variable "identity_name" {
+  type = string
+}
+
+variable "ci_principal_id" {
+  description = "Object ID of the service principal GitHub Actions uses to push images."
+  type        = string
 }
