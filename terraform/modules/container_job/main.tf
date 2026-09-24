@@ -12,45 +12,46 @@ resource "azurerm_container_app_job" "pipeline_job" {
     replica_completion_count = 1
   }
 
+  identity {
+    type         = "UserAssigned"
+    identity_ids = [var.identity_id]
+  }
+
   registry {
-    server               = var.acr_login_server
-    username             = var.acr_admin_username
-    password_secret_name = "acr-password"
+    server   = var.acr_login_server
+    identity = var.identity_id
   }
 
-  secret {
-    name  = "acr-password"
-    value = var.acr_admin_password
-  }
+  template {
+    container {
+      name = "data-pipeline"
+      # Placeholder so a fresh environment can be created before CI has pushed
+      # an image; CI sets the real image and ignore_changes keeps it.
+      image  = "mcr.microsoft.com/k8se/quickstart-jobs:latest"
+      cpu    = 0.5
+      memory = "1Gi"
 
-  secret {
-  name  = "storage-connection-string"
-  value = var.storage_connection_string
-}
+      env {
+        name  = "API_URL"
+        value = var.api_url
+      }
 
-template {
-  container {
-    name   = "data-pipeline"
-    image  = "${var.acr_login_server}/data-pipeline:latest"
-    cpu    = 0.5
-    memory = "1Gi"
+      env {
+        name  = "BLOB_CONTAINER_NAME"
+        value = var.blob_container_name
+      }
 
-    env {
-      name  = "API_URL"
-      value = var.api_url
-    }
+      env {
+        name  = "AZURE_STORAGE_ACCOUNT_URL"
+        value = var.storage_account_url
+      }
 
-    env {
-      name  = "BLOB_CONTAINER_NAME"
-      value = var.blob_container_name
-    }
-
-    env {
-      name        = "AZURE_STORAGE_CONNECTION_STRING"
-      secret_name = "storage-connection-string"
+      env {
+        name  = "AZURE_CLIENT_ID"
+        value = var.identity_client_id
+      }
     }
   }
-}
 
   lifecycle {
     ignore_changes = [
