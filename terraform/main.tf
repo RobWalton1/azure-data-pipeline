@@ -10,7 +10,7 @@ terraform {
 provider "azurerm" {
   features {}
 
-  subscription_id = "cf6310ce-9655-45c5-86fe-79db67dacccc"
+  subscription_id = var.subscription_id
 
   resource_provider_registrations = "none"
 }
@@ -44,7 +44,6 @@ module "container_env" {
   location            = azurerm_resource_group.pipeline_rg.location
 
   log_analytics_workspace_id = module.log_analytics.id
-  log_analytics_shared_key   = module.log_analytics.primary_shared_key
 }
 
 module "identity" {
@@ -74,6 +73,7 @@ module "container_job" {
   api_url             = var.api_url
   blob_container_name = var.blob_container_name
   storage_account_url = module.storage.primary_blob_endpoint
+  cron_expression     = var.job_cron_expression
 
   # The job pulls its image on creation, so AcrPull must already be granted.
   depends_on = [module.identity]

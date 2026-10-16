@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   test:
@@ -29,9 +30,11 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      ACR_NAME: datapipelinerobtfacr
-      REGISTRY: datapipelinerobtfacr.azurecr.io
+      ACR_NAME: ${{ vars.ACR_NAME }}
+      REGISTRY: ${{ vars.ACR_NAME }}.azurecr.io
       IMAGE_NAME: data-pipeline
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+      CONTAINER_JOB_NAME: ${{ vars.CONTAINER_JOB_NAME }}
 
     steps:
       - name: Checkout repository
@@ -63,6 +66,6 @@ jobs:
       - name: Update Container App Job
         run: |
           az containerapp job update \
-            --name data-pipeline-job-tf \
-            --resource-group data-pipeline-rg-tf \
-            --image datapipelinerobtfacr.azurecr.io/data-pipeline:${IMAGE_TAG}
+            --name $CONTAINER_JOB_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --image $REGISTRY/$IMAGE_NAME:${IMAGE_TAG}

@@ -7,7 +7,8 @@ resource "azurerm_container_app_job" "pipeline_job" {
   replica_timeout_in_seconds = 300
   replica_retry_limit        = 1
 
-  manual_trigger_config {
+  schedule_trigger_config {
+    cron_expression          = var.cron_expression
     parallelism              = 1
     replica_completion_count = 1
   }
