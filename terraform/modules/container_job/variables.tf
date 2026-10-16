@@ -37,3 +37,8 @@ variable "blob_container_name" {
 variable "storage_account_url" {
   type = string
 }
+
+variable "cron_expression" {
+  description = "When the job runs, as a cron expression in UTC."
+  type        = string
+}

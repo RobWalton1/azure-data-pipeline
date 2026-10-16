@@ -6,7 +6,7 @@ The Python application retrieves data from a public REST API, transforms it, and
 
 All Azure infrastructure is provisioned with Terraform. The configuration is organised into reusable modules for storage, ACR, the Container Apps environment, Container Apps Job, managed identity, and Log Analytics; Terraform state is held remotely in Azure Storage for reliable infrastructure management.
 
-GitHub Actions automates delivery: a push to `main` builds the image, pushes it to ACR with a commit-SHA version tag, and updates the Container Apps Job to run that version. Azure Log Analytics provides centralised execution logs, with KQL available for querying logs and troubleshooting deployments.
+The job runs on a cron schedule (hourly by default). GitHub Actions automates delivery: a push to `main` builds the image, pushes it to ACR with a commit-SHA version tag, and updates the Container Apps Job to run that version. Azure Log Analytics provides centralised execution logs, with KQL available for querying logs and troubleshooting deployments.
 
 ## Key technologies
 
@@ -151,13 +151,14 @@ Terraform creates the following resources:
 - Azure Container Apps environment
 - User-assigned managed identity for the job, with `AcrPull` on the registry and `Storage Blob Data Contributor` on the storage account
 - `AcrPush` on the registry for the CI service principal
-- Manually triggered Azure Container Apps Job
+- Scheduled Azure Container Apps Job
 
 The remote Terraform state backend is configured in `terraform/backend.tf`. Ensure the backend resource group, storage account, and `tfstate` container already exist and that your Azure identity can access them.
 
 Create a local `terraform.tfvars` file inside `terraform/`. It contains no secrets, but is ignored by Git because it holds environment-specific values.
 
 ```hcl
+subscription_id            = "<target-subscription-id>"
 resource_group_name        = "data-pipeline-rg"
 location                   = "uksouth"
 storage_account_name       = "<globally-unique-storage-account-name>"
@@ -169,6 +170,8 @@ api_url                    = "https://api.coingecko.com/api/v3/simple/price?ids=
 blob_container_name        = "pipeline-output"
 identity_name              = "data-pipeline-job-identity"
 ci_principal_id            = "<object-id-of-the-github-actions-service-principal>"
+# Optional, defaults to hourly
+job_cron_expression        = "0 * * * *"
 ```
 
 Find `ci_principal_id` from the `clientId` in your `AZURE_CREDENTIALS` secret:
@@ -192,7 +195,7 @@ Terraform creates the Container Apps Job with a public placeholder image, becaus
 
 ## CI/CD
 
-On every push to `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) does the following:
+On every push to `main`, or when run manually from the Actions tab, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) does the following:
 
 1. Runs the test suite.
 2. Authenticates to Azure and logs in to ACR with the same identity (`az acr login`).
@@ -206,7 +209,13 @@ Configure this repository secret before enabling the workflow:
 | --- | --- |
 | `AZURE_CREDENTIALS` | Azure service-principal credentials accepted by `azure/login`. Terraform grants this principal every role the workflow needs, scoped to the registry, the job and the job's identity; it needs no broader access. |
 
-The workflow currently names the target registry, job, and resource group directly. If you use different Azure resource names, update the `REGISTRY` value and the `az containerapp job update` command in the workflow.
+Target resource names are read from repository variables, so the workflow carries no environment-specific values:
+
+| Variable | Description |
+| --- | --- |
+| `ACR_NAME` | Registry name, without `.azurecr.io`. |
+| `RESOURCE_GROUP` | Resource group holding the Container Apps Job. |
+| `CONTAINER_JOB_NAME` | Name of the Container Apps Job. |
 
 ## Configuration reference
 
@@ -221,7 +230,8 @@ The workflow currently names the target registry, job, and resource group direct
 
 - The pipeline writes to a fixed blob name, `output.json`; each run replaces the previous output.
 - Timestamps are generated in UTC.
-- The Container Apps Job uses a manual trigger configuration with one replica and a 300-second timeout.
+- The Container Apps Job runs on the `job_cron_expression` schedule (UTC) with one replica and a 300-second timeout. It can also be started on demand with `az containerapp job start`.
+- The container runs as an unprivileged user (UID 10001), not root.
 - Application logs are written to standard output and are available through the Container Apps environment's Log Analytics workspace when run in Azure.
 
 ## Security

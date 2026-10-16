@@ -11,7 +11,6 @@ logging.basicConfig(
 
 def main():
     logging.info("Pipeline started")
-    logging.info("CI/CD is implemented, starting the pipeline execution")
     logging.info("Fetching data from API")
 
     try:
@@ -19,7 +18,7 @@ def main():
         transformed_data = transform_data(raw_data)
         save_to_blob(transformed_data)
 
-        logging.info("Pipeline completed successfully, CI/CD is implemented")
+        logging.info("Pipeline completed successfully")
 
     except Exception as e:
         logging.error(f"Pipeline failed: {e}")
