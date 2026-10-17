@@ -19,6 +19,6 @@ variable "storage_account_id" {
 }
 
 variable "ci_principal_id" {
-  description = "Object ID of the service principal GitHub Actions uses to push images."
+  description = "Principal ID of the identity GitHub Actions logs in as."
   type        = string
 }

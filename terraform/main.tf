@@ -55,7 +55,18 @@ module "identity" {
 
   acr_id             = module.acr.id
   storage_account_id = module.storage.id
-  ci_principal_id    = var.ci_principal_id
+  ci_principal_id    = module.github_oidc.principal_id
+}
+
+module "github_oidc" {
+  source = "./modules/github_oidc"
+
+  identity_name       = var.ci_identity_name
+  resource_group_name = azurerm_resource_group.pipeline_rg.name
+  location            = azurerm_resource_group.pipeline_rg.location
+
+  github_repository = var.github_repository
+  github_branch     = var.github_branch
 }
 
 module "container_job" {
@@ -82,7 +93,7 @@ module "container_job" {
 resource "azurerm_role_assignment" "ci_job_contributor" {
   scope                = module.container_job.id
   role_definition_name = "Contributor"
-  principal_id         = var.ci_principal_id
+  principal_id         = module.github_oidc.principal_id
   principal_type       = "ServicePrincipal"
 }
 

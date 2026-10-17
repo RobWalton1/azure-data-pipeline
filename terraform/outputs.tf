@@ -13,3 +13,12 @@ output "acr_login_server" {
 output "container_job_name" {
   value = module.container_job.name
 }
+output "ci_client_id" {
+  description = "Set as the AZURE_CLIENT_ID repository variable."
+  value       = module.github_oidc.client_id
+}
+
+output "ci_tenant_id" {
+  description = "Set as the AZURE_TENANT_ID repository variable."
+  value       = module.github_oidc.tenant_id
+}

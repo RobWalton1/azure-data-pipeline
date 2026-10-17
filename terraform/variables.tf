@@ -43,13 +43,26 @@ variable "identity_name" {
   type = string
 }
 
-variable "ci_principal_id" {
-  description = "Object ID of the service principal GitHub Actions uses to push images."
-  type        = string
-}
-
 variable "job_cron_expression" {
   description = "When the pipeline job runs, as a cron expression in UTC."
   type        = string
   default     = "0 * * * *"
+}
+
+variable "ci_identity_name" {
+  description = "Name of the managed identity GitHub Actions logs in as."
+  type        = string
+  default     = "github-actions-ci"
+}
+
+variable "github_repository" {
+  description = "Repository whose workflows may log in as the CI identity, as owner/name."
+  type        = string
+  default     = "RobWalton1/azure-data-pipeline"
+}
+
+variable "github_branch" {
+  description = "Branch whose workflow runs may log in as the CI identity."
+  type        = string
+  default     = "main"
 }

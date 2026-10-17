@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -29,6 +29,11 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
 
+    # id-token lets the job request a GitHub OIDC token to exchange for an Azure token.
+    permissions:
+      id-token: write
+      contents: read
+
     env:
       ACR_NAME: ${{ vars.ACR_NAME }}
       REGISTRY: ${{ vars.ACR_NAME }}.azurecr.io
@@ -38,15 +43,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set image tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Azure Login
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to Azure Container Registry
         run: az acr login --name $ACR_NAME

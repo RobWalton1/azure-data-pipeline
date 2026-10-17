@@ -150,7 +150,7 @@ Terraform creates the following resources:
 - Log Analytics workspace
 - Azure Container Apps environment
 - User-assigned managed identity for the job, with `AcrPull` on the registry and `Storage Blob Data Contributor` on the storage account
-- `AcrPush` on the registry for the CI service principal
+- User-assigned managed identity for GitHub Actions, with a federated credential trusting only workflow runs on `main` of this repository, and `AcrPush` on the registry, `Contributor` on the job and `Managed Identity Operator` on the job's identity
 - Scheduled Azure Container Apps Job
 
 The remote Terraform state backend is configured in `terraform/backend.tf`. Ensure the backend resource group, storage account, and `tfstate` container already exist and that your Azure identity can access them.
@@ -169,15 +169,11 @@ log_analytics_name         = "data-pipeline-logs"
 api_url                    = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=gbp"
 blob_container_name        = "pipeline-output"
 identity_name              = "data-pipeline-job-identity"
-ci_principal_id            = "<object-id-of-the-github-actions-service-principal>"
 # Optional, defaults to hourly
 job_cron_expression        = "0 * * * *"
-```
-
-Find `ci_principal_id` from the `clientId` in your `AZURE_CREDENTIALS` secret:
-
-```bash
-az ad sp show --id <clientId> --query id -o tsv
+# Optional, override when deploying from a fork or another branch
+github_repository          = "RobWalton1/azure-data-pipeline"
+github_branch              = "main"
 ```
 
 Applying the configuration requires permission to create role assignments (Owner or User Access Administrator on the resource group).
@@ -198,21 +194,20 @@ Terraform creates the Container Apps Job with a public placeholder image, becaus
 On every push to `main`, or when run manually from the Actions tab, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) does the following:
 
 1. Runs the test suite.
-2. Authenticates to Azure and logs in to ACR with the same identity (`az acr login`).
+2. Authenticates to Azure with GitHub OIDC and logs in to ACR with the same identity (`az acr login`).
 3. Builds the Docker image, tagged with the short commit SHA and `latest`.
 4. Pushes both tags to Azure Container Registry.
 5. Updates the Azure Container Apps Job to use the commit-SHA image.
 
-Configure this repository secret before enabling the workflow:
+The workflow uses no repository secrets. It requests a short-lived GitHub OIDC token, which Azure exchanges for an access token as the CI managed identity because the token's subject matches the identity's federated credential (`repo:<owner>/<repo>:ref:refs/heads/main`). Runs from other branches, forks or repositories are refused.
 
-| Secret | Description |
-| --- | --- |
-| `AZURE_CREDENTIALS` | Azure service-principal credentials accepted by `azure/login`. Terraform grants this principal every role the workflow needs, scoped to the registry, the job and the job's identity; it needs no broader access. |
-
-Target resource names are read from repository variables, so the workflow carries no environment-specific values:
+Configure these repository variables before enabling the workflow. None of them are secret:
 
 | Variable | Description |
 | --- | --- |
+| `AZURE_CLIENT_ID` | Client ID of the CI identity, from `terraform output ci_client_id`. |
+| `AZURE_TENANT_ID` | Entra tenant ID, from `terraform output ci_tenant_id`. |
+| `AZURE_SUBSCRIPTION_ID` | Subscription holding the pipeline resources. |
 | `ACR_NAME` | Registry name, without `.azurecr.io`. |
 | `RESOURCE_GROUP` | Resource group holding the Container Apps Job. |
 | `CONTAINER_JOB_NAME` | Name of the Container Apps Job. |
@@ -236,19 +231,19 @@ Target resource names are read from repository variables, so the workflow carrie
 
 ## Security
 
-The running pipeline holds no secrets. Each actor has its own Azure AD identity, scoped to the minimum role it needs:
+Neither the running pipeline nor CI holds any secrets. Each actor has its own Azure AD identity, scoped to the minimum role it needs:
 
 | Actor | Identity | Roles |
 | --- | --- | --- |
 | Container Apps Job | User-assigned managed identity | `AcrPull` on the registry, `Storage Blob Data Contributor` on the storage account |
-| GitHub Actions | Service principal | `AcrPush` on the registry, `Contributor` on the job only, `Managed Identity Operator` on the job's identity |
+| GitHub Actions | User-assigned managed identity, federated with GitHub OIDC | `AcrPush` on the registry, `Contributor` on the job only, `Managed Identity Operator` on the job's identity |
 | Local development | Developer's Azure CLI login | `Storage Blob Data Contributor`, granted manually |
 
 The ACR admin account is disabled, and no storage connection string or account key is distributed.
 
 A user-assigned identity is used rather than a system-assigned one because the job pulls its image on creation. A system-assigned identity would not exist until the job did, so it could not be granted `AcrPull` in advance.
 
-Known remaining gap: `AZURE_CREDENTIALS` is a long-lived service-principal secret. Replacing it with GitHub OIDC workload identity federation would remove the last stored credential.
+CI holds no stored credential either. GitHub Actions authenticates with OIDC workload identity federation, so there is no client secret to leak or rotate, and a managed identity cannot be given one.
 
 ## License
 
