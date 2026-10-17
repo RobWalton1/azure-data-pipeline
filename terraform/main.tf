@@ -55,7 +55,7 @@ module "identity" {
 
   acr_id             = module.acr.id
   storage_account_id = module.storage.id
-  ci_principal_id    = var.ci_principal_id
+  ci_principal_id    = module.github_oidc.principal_id
 }
 
 module "github_oidc" {
@@ -93,7 +93,7 @@ module "container_job" {
 resource "azurerm_role_assignment" "ci_job_contributor" {
   scope                = module.container_job.id
   role_definition_name = "Contributor"
-  principal_id         = var.ci_principal_id
+  principal_id         = module.github_oidc.principal_id
   principal_type       = "ServicePrincipal"
 }
 

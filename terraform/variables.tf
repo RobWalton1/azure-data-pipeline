@@ -43,11 +43,6 @@ variable "identity_name" {
   type = string
 }
 
-variable "ci_principal_id" {
-  description = "Object ID of the service principal GitHub Actions uses to push images."
-  type        = string
-}
-
 variable "job_cron_expression" {
   description = "When the pipeline job runs, as a cron expression in UTC."
   type        = string
