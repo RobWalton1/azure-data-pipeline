@@ -53,3 +53,21 @@ variable "job_cron_expression" {
   type        = string
   default     = "0 * * * *"
 }
+
+variable "ci_identity_name" {
+  description = "Name of the managed identity GitHub Actions logs in as."
+  type        = string
+  default     = "github-actions-ci"
+}
+
+variable "github_repository" {
+  description = "Repository whose workflows may log in as the CI identity, as owner/name."
+  type        = string
+  default     = "RobWalton1/azure-data-pipeline"
+}
+
+variable "github_branch" {
+  description = "Branch whose workflow runs may log in as the CI identity."
+  type        = string
+  default     = "main"
+}

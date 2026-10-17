@@ -58,6 +58,17 @@ module "identity" {
   ci_principal_id    = var.ci_principal_id
 }
 
+module "github_oidc" {
+  source = "./modules/github_oidc"
+
+  identity_name       = var.ci_identity_name
+  resource_group_name = azurerm_resource_group.pipeline_rg.name
+  location            = azurerm_resource_group.pipeline_rg.location
+
+  github_repository = var.github_repository
+  github_branch     = var.github_branch
+}
+
 module "container_job" {
   source = "./modules/container_job"
 
